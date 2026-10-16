@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0b0e14">
+    <title>Апгрейд Карточек</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: #0b0e14;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            padding-top: max(8px, env(safe-area-inset-top));
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
+            padding-left: max(8px, env(safe-area-inset-left));
+            padding-right: max(8px, env(safe-area-inset-right));
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 6px;
+            flex-shrink: 0;
+        }
+        
+        .header-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #a0a5b5;
+        }
+
+        .balance {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #f0b90b;
+        }
+
+        .upgrade-panel {
+            background-color: #151a24;
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .upgrade-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+
+        .item-slot {
+            flex: 1;
+            min-width: 0;
+            background-color: #1e2430;
+            border-radius: 12px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1.5px solid #2a3342;
+            padding: 6px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .item-slot .sticker-placeholder {
+            width: 70%;
+            height: 70%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            line-height: 1;
+        }
+
+        .item-slot .card-image {
+            width: 100%;
+            height: 75%;
+            object-fit: contain;
+            display: block;
+            pointer-events: none;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+        }
+
+        .item-slot .item-name {
+            font-size: 11px;
+            color: #ffffff;
+            text-align: center;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            font-weight: 600;
+            z-index: 2;
+        }
+
+        .item-slot .item-price-tag {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            font-size: 10px;
+            color: #f0b90b;
+            background: rgba(0,0,0,0.6);
+            padding: 3px 5px;
+            border-radius: 5px;
+            z-index: 3;
+            font-weight: 600;
+        }
+
+        .circle-container {
+            width: 105px;
+            height: 105px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .arrow-pointer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 5;
+            pointer-events: none;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .arrow-pointer::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-top: 11px solid #f0b90b;
+            filter: drop-shadow(0 0 4px #f0b90b);
+        }
+
+        .circle-svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg) translateZ(0);
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: #2a3342;
+            stroke-width: 6;
+        }
+
+        .circle-progress {
+            fill: none;
+            stroke: #4caf50;
+            stroke-width: 6;
+            stroke-linecap: butt;
+            stroke-dasharray: 220;
+            stroke-dashoffset: 220;
+            transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+        }
+
+        .circle-text {
+            position: absolute;
+            font-size: 17px;
+            font-weight: bold;
+            color: #f0b90b;
+            z-index: 6;
+        }
+
+        .max-chance-badge {
+            position: absolute;
+            bottom: -6px;
+            font-size: 9px;
+            color: #f0b90b;
+            background: rgba(240, 185, 11, 0.15);
+            padding: 2px 5px;
+            border-radius: 4px;
+            border: 1px solid rgba(240, 185, 11, 0.3);
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+        }
+        .max-chance-badge.visible {
+            opacity: 1;
+        }
+
+        .upgrade-btn {
+            background: linear-gradient(90deg, #f0b90b, #f8d33a);
+            color: #0b0e14;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            min-height: 52px;
+            touch-action: manipulation;
+        }
+
+        .upgrade-btn:active {
+            transform: scale(0.97);
+        }
+
+        .upgrade-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .inventory-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow: hidden;
+            padding-bottom: 4px;
+            min-height: 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            background: #151a24;
+            padding: 4px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #a0a5b5;
+            padding: 11px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            min-height: 42px;
+        }
+
+        .tab-btn.active {
+            background: #2a3342;
+            color: #fff;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 2px;
+            padding-bottom: 8px;
+            align-content: start;
+        }
+
+        .grid-container::-webkit-scrollbar {
+            width: 0px;
+            display: none;
+        }
+
+        .grid-item {
+            background-color: #1e2430;
+            border-radius: 10px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1.5px solid #2a3342;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            padding: 4px 3px 10px 3px;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            transform: translateZ(0);
+        }
+
+        .grid-item:active {
+            transform: scale(0.94) translateZ(0);
+        }
+
+        .grid-item.selected {
+            border-color: #f0b90b;
+            box-shadow: 0 0 10px rgba(240, 185, 11, 0.5);
+            background-color: #2a3342;
+        }
+
+        .grid-item.locked {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(1);
+        }
+        .grid-item.locked:active {
+            transform: none;
+        }
+        .grid-item.locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            filter: grayscale(0);
+            opacity: 0.95;
+            z-index: 10;
+        }
+
+        .grid-item .sticker {
+            font-size: 26px;
+            line-height: 1;
+            margin-bottom: 3px;
+        }
+
+        .grid-item .card-image {
+            width: 92%;
+            height: 60%;
+            object-fit: contain;
+            margin-bottom: 2px;
+            pointer-events: none;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+        }
+
+        .grid-item .item-name-small {
+            font-size: 9px;
+            color: #d0d5e0;
+            text-align: center;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 600;
+            padding: 0 1px;
+            z-index: 2;
+        }
+
+        .grid-item .item-price {
+            font-size: 9px;
+            color: #f0b90b;
+            position: absolute;
+            bottom: 4px;
+            right: 5px;
+            font-weight: 700;
+        }
+
+        .grid-item .dup-badge {
+            position: absolute;
+            top: 3px;
+            left: 4px;
+            font-size: 9px;
+            color: #f0b90b;
+            background: rgba(0,0,0,0.7);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
+            z-index: 3;
+        }
+
+        .rarity-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+        }
+        .rarity-common { background-color: #5a6b82; }
+        .rarity-uncommon { background-color: #4caf50; }
+        .rarity-rare { background-color: #2196f3; }
+        .rarity-epic { background-color: #9c27b0; }
+        .rarity-legendary { background-color: #f0b90b; }
+
+        .toast {
+            position: fixed;
+            top: max(20px, env(safe-area-inset-top));
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #151a24;
+            color: #fff;
+            padding: 14px 22px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease;
+            border: 1px solid #2a3342;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.win { border-color: #4caf50; color: #4caf50; }
+        .toast.lose { border-color: #f44336; color: #f44336; }
+        .toast.info { border-color: #f0b90b; color: #f0b90b; }
+
+        .sound-toggle {
+            position: absolute;
+            top: 0;
+            right: 6px;
+            background: #151a24;
+            border: 1px solid #2a3342;
+            color: #a0a5b5;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 50;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        .sound-toggle:active {
+            transform: scale(0.95);
+        }
+        .sound-toggle.on {
+            color: #f0b90b;
+            border-color: #f0b90b;
+        }
+
+        @media (max-height: 640px) {
+            .upgrade-panel {
+                padding: 10px;
+                gap: 10px;
+            }
+            .circle-container {
+                width: 90px;
+                height: 90px;
+            }
+            .upgrade-btn {
+                padding: 13px;
+                min-height: 46px;
+                font-size: 14px;
+            }
+            .tab-btn {
+                padding: 9px;
+                font-size: 12px;
+            }
+            .item-slot .card-image {
+                height: 70%;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .grid-container {
+                gap: 5px;
+            }
+            .grid-item .item-name-small {
+                font-size: 8px;
+            }
+            .item-slot .item-name {
+                font-size: 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div class="header">
+        <div class="header-title">Апгрейд Карточек</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div class="balance">
+                <span>🪙</span> <span id="balance-value">100 000</span>
+            </div>
+            <button class="sound-toggle on" id="sound-toggle" title="Звук">🔊</button>
+        </div>
+    </div>
+
+    <div class="upgrade-panel">
+        <div class="upgrade-row">
+            <div class="item-slot" id="slot-left">
+                <div id="slot-left-content" class="sticker-placeholder">🃏</div> 
+                <div class="item-name" id="slot-left-name">Выбери карту</div>
+                <div class="item-price-tag" id="slot-left-price">0</div>
+                <div class="rarity-bar" id="slot-left-rarity"></div>
+            </div>
+
+            <div class="circle-container">
+                <div class="arrow-pointer" id="arrow-pointer"></div>
+                <svg class="circle-svg" viewBox="0 0 80 80">
+                    <circle class="circle-bg" cx="40" cy="40" r="35"></circle>
+                    <circle class="circle-progress" cx="40" cy="40" r="35" id="progress-circle"></circle>
+                </svg>
+                <div class="circle-text" id="progress-text">0.00%</div>
+                <div class="max-chance-badge" id="max-badge">MAX 75%</div>
+            </div>
+
+            <div class="item-slot" id="slot-right">
+                <div id="slot-right-content" class="sticker-placeholder">👑</div>
+                <div class="item-name" id="slot-right-name">Цель</div>
+                <div class="item-price-tag" id="slot-right-price">0</div>
+                <div class="rarity-bar" id="slot-right-rarity"></div>
+            </div>
+        </div>
+
+        <button class="upgrade-btn" id="upgrade-btn">Апгрейд</button>
+    </div>
+
+    <div class="inventory-wrapper">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="inventory">🎒 Инвентарь</button>
+            <button class="tab-btn" data-tab="contracts">🏆 Контракты</button>
+        </div>
+        <div class="grid-container" id="items-grid"></div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const MAX_CHANCE = 75;
+
+    // =====================================================
+    // ЗВУКОВОЙ ДВИЖОК
+    // =====================================================
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function initAudio() {
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) {
+                console.warn('Web Audio API не поддерживается');
+            }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playTone(freq, duration, type = 'sine', volume = 0.1, delay = 0) {
+        if (!soundEnabled || !audioCtx) return;
+        const now = audioCtx.currentTime + delay;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+
+    function playTick(pitch = 800, volume = 0.08) {
+        if (!soundEnabled || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(pitch, now);
+        
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start(now);
+        osc.stop(now + 0.05);
+    }
+
+    function playSelectSound() { playTick(1200, 0.06); }
+
+    function playWinSound() {
+        if (!soundEnabled || !audioCtx) return;
+        playTone(523, 0.15, 'sine', 0.12, 0);
+        playTone(659, 0.15, 'sine', 0.12, 0.1);
+        playTone(784, 0.25, 'sine', 0.12, 0.2);
+        playTone(1046, 0.4, 'sine', 0.12, 0.3);
+    }
+
+    function playLoseSound() {
+        if (!soundEnabled || !audioCtx) return;
+        playTone(400, 0.2, 'sawtooth', 0.1, 0);
+        playTone(300, 0.2, 'sawtooth', 0.1, 0.15);
+        playTone(200, 0.4, 'sawtooth', 0.1, 0.3);
+    }
+
+    function playSpinSound(duration, totalTicks) {
+        if (!soundEnabled || !audioCtx) return;
+        
+        let time = 0;
+        let tickIndex = 0;
+        
+        function scheduleTick() {
+            if (tickIndex >= totalTicks) return;
+            if (time > duration) return;
+            
+            const progress = time / duration;
+            const delayMs = 40 + progress * 210;
+            const pitch = 900 - progress * 300;
+            const vol = 0.06 * (1 - progress * 0.5);
+            
+            playTick(pitch, vol);
+            
+            time += delayMs;
+            tickIndex++;
+            
+            if (time <= duration) {
+                setTimeout(scheduleTick, delayMs);
+            }
+        }
+        scheduleTick();
+    }
+
+    const soundToggle = document.getElementById('sound-toggle');
+    soundToggle.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        soundToggle.classList.toggle('on', soundEnabled);
+        soundToggle.innerText = soundEnabled ? '🔊' : '🔇';
+        
+        if (soundEnabled) {
+            initAudio();
+            playSelectSound();
+        }
+    });
+
+    // =====================================================
+    // ДАННЫЕ КАРТОЧЕК
+    // =====================================================
+    // Меняй тут. Картинки лежат в папке images.
+    // Формат: .jpg, .png, .webp — любой.
+    
+    let inventoryItems = [
+        { id: 1, templateId: 'card_1', name: "Карточка 1", image: "images/1.jpg", rarity: "common",    price: 100 },
+        { id: 2, templateId: 'card_2', name: "Карточка 2", image: "images/2.jpg", rarity: "uncommon",  price: 250 },
+        { id: 3, templateId: 'card_3', name: "Карточка 3", image: "images/3.jpg", rarity: "rare",      price: 500 },
+        { id: 4, templateId: 'card_4', name: "Карточка 4", image: "images/4.jpg", rarity: "epic",      price: 1200 },
+        { id: 5, templateId: 'card_5', name: "Карточка 5", image: "images/5.jpg", rarity: "legendary", price: 5000 },
+        { id: 6, templateId: 'card_6', name: "Карточка 6", image: "images/6.jpg", rarity: "common",    price: 80 },
+        { id: 7, templateId: 'card_7', name: "Карточка 7", image: "images/7.jpg", rarity: "uncommon",  price: 300 },
+        { id: 8, templateId: 'card_8', name: "Карточка 8", image: "images/8.jpg", rarity: "rare",      price: 700 },
+    ];
+
+    const contractItems = [
+        { id: 101, templateId: 'target_9',  name: "Цель 9",  image: "images/9.jpg",  rarity: "legendary", price: 10000 },
+        { id: 102, templateId: 'target_10', name: "Цель 10", image: "images/10.jpg", rarity: "epic",      price: 4000 },
+        { id: 103, templateId: 'target_11', name: "Цель 11", image: "images/11.jpg", rarity: "rare",      price: 2000 },
+        { id: 104, templateId: 'target_12', name: "Цель 12", image: "images/12.jpg", rarity: "uncommon",  price: 800 },
+        { id: 105, templateId: 'target_13', name: "Цель 13", image: "images/13.jpg", rarity: "common",    price: 150 },
+        { id: 106, templateId: 'target_14', name: "Цель 14", image: "images/14.jpg", rarity: "legendary", price: 15000 },
+    ];
+
+    // --- СОСТОЯНИЕ ---
+    let currentTab = 'inventory';
+    let selectedLeftItem = null;
+    let selectedRightItem = null;
+    let isUpgrading = false;
+    let currentChance = 0;
+    let nextId = 5000;
+
+    // DOM
+    const itemsGrid = document.getElementById('items-grid');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const upgradeBtn = document.getElementById('upgrade-btn');
+    const progressCircle = document.getElementById('progress-circle');
+    const progressText = document.getElementById('progress-text');
+    const arrowPointer = document.getElementById('arrow-pointer');
+    const toast = document.getElementById('toast');
+    const maxBadge = document.getElementById('max-badge');
+    
+    const slotLeftContent = document.getElementById('slot-left-content');
+    const slotLeftName = document.getElementById('slot-left-name');
+    const slotLeftPrice = document.getElementById('slot-left-price');
+    const slotLeftRarity = document.getElementById('slot-left-rarity');
+    
+    const slotRightContent = document.getElementById('slot-right-content');
+    const slotRightName = document.getElementById('slot-right-name');
+    const slotRightPrice = document.getElementById('slot-right-price');
+    const slotRightRarity = document.getElementById('slot-right-rarity');
+
+    // --- ФУНКЦИИ ---
+
+    function showToast(message, type = 'info') {
+        toast.innerText = message;
+        toast.className = 'toast ' + type;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2500);
+    }
+
+    function renderCardVisual(item, size = 'grid') {
+        if (item.image) {
+            return `<img class="card-image" src="${item.image}" alt="${item.name}" loading="eager" decoding="async" onerror="this.outerHTML='<div class=\\'sticker\\'>🃏</div>'">`;
+        }
+        return `<div class="sticker" style="${size === 'slot' ? 'font-size:38px;' : ''}">🃏</div>`;
+    }
+
+    function isItemAvailable(item, forSlot) {
+        if (forSlot === 'left') return true;
+        if (!selectedLeftItem) return true;
+        if (item.price < selectedLeftItem.price) return false;
+        if (item.templateId === selectedLeftItem.templateId) return false;
+        return true;
+    }
+
+    function getLockReason(item, forSlot) {
+        if (forSlot === 'left') return '';
+        if (!selectedLeftItem) return 'Сначала выбери свою карту!';
+        
+        if (item.templateId === selectedLeftItem.templateId) {
+            return 'Нельзя ставить на такую же карту!';
+        }
+        if (item.price < selectedLeftItem.price) {
+            return `Цель должна быть дороже ${selectedLeftItem.price} 🪙`;
+        }
+        return '';
+    }
+
+    function renderGrid() {
+        itemsGrid.innerHTML = '';
+        const sourceArray = currentTab === 'inventory' ? inventoryItems : contractItems;
+        
+        if (sourceArray.length === 0) {
+            itemsGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #5a6b82; padding: 20px; font-size: 13px;">Пусто</div>';
+            return;
+        }
+        
+        const templateCounts = {};
+        sourceArray.forEach(item => {
+            templateCounts[item.templateId] = (templateCounts[item.templateId] || 0) + 1;
+        });
+        
+        const templateSeen = {};
+        
+        sourceArray.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'grid-item';
+            
+            const slotType = currentTab === 'inventory' ? 'left' : 'right';
+            const available = isItemAvailable(item, slotType);
+            
+            if (!available) div.classList.add('locked');
+            
+            if (selectedLeftItem && selectedLeftItem.id === item.id) div.classList.add('selected');
+            if (selectedRightItem && selectedRightItem.id === item.id) div.classList.add('selected');
+            
+            let dupBadge = '';
+            if (templateCounts[item.templateId] > 1) {
+                templateSeen[item.templateId] = (templateSeen[item.templateId] || 0) + 1;
+                dupBadge = `<div class="dup-badge">#${templateSeen[item.templateId]}</div>`;
+            }
+            
+            div.innerHTML = `
+                ${dupBadge}
+                ${renderCardVisual(item, 'grid')}
+                <div class="item-name-small">${item.name}</div>
+                <div class="item-price">${item.price}</div>
+                <div class="rarity-bar rarity-${item.rarity}"></div>
+            `;
+
+            // Мгновенный отклик на телефоне через touchstart
+            let touched = false;
+            div.addEventListener('touchstart', (e) => {
+                touched = true;
+                handleItemClick(item, available);
+            }, { passive: true });
+            
+            div.addEventListener('click', (e) => {
+                if (!touched) {
+                    handleItemClick(item, available);
+                }
+                touched = false;
+            });
+            
+            itemsGrid.appendChild(div);
+        });
+    }
+
+    function handleItemClick(item, available) {
+        if (isUpgrading) return;
+        
+        initAudio();
+
+        if (!available) {
+            showToast(getLockReason(item, currentTab === 'inventory' ? 'left' : 'right'), 'lose');
+            playTick(300, 0.1);
+            return;
+        }
+
+        playSelectSound();
+
+        if (currentTab === 'inventory') {
+            selectedLeftItem = item;
+            updateSlot('left', item);
+            
+            if (selectedRightItem) {
+                const rightStillValid = 
+                    selectedRightItem.price >= item.price && 
+                    selectedRightItem.templateId !== item.templateId;
+                
+                if (!rightStillValid) {
+                    selectedRightItem = null;
+                    updateSlot('right', null);
+                    showToast('Старая цель сброшена', 'info');
+                }
+            }
+        } else {
+            selectedRightItem = item;
+            updateSlot('right', item);
+        }
+        
+        renderGrid();
+        updateChance();
+    }
+
+    function updateSlot(side, item) {
+        const contentEl = side === 'left' ? slotLeftContent : slotRightContent;
+        const nameEl = side === 'left' ? slotLeftName : slotRightName;
+        const priceEl = side === 'left' ? slotLeftPrice : slotRightPrice;
+        const rarityEl = side === 'left' ? slotLeftRarity : slotRightRarity;
+
+        if (item) {
+            if (item.image) {
+                contentEl.innerHTML = `<img class="card-image" src="${item.image}" alt="${item.name}" loading="eager" decoding="async" onerror="this.outerHTML='<div style=\\'font-size:38px;\\'>🃏</div>'">`;
+            } else {
+                contentEl.innerHTML = `<div style="font-size:38px;">🃏</div>`;
+            }
+            nameEl.innerText = item.name;
+            priceEl.innerText = item.price;
+            rarityEl.className = `rarity-bar rarity-${item.rarity}`;
+        } else {
+            contentEl.innerHTML = side === 'left' ? '🃏' : '👑';
+            nameEl.innerText = side === 'left' ? 'Выбери карту' : 'Цель';
+            priceEl.innerText = '0';
+            rarityEl.className = 'rarity-bar';
+        }
+    }
+
+    function updateChance() {
+        if (selectedLeftItem && selectedRightItem) {
+            let rawChance = (selectedLeftItem.price / selectedRightItem.price) * 100;
+            
+            if (rawChance < 1) rawChance = 1;
+            
+            let finalChance = Math.min(rawChance, MAX_CHANCE);
+            
+            if (rawChance > MAX_CHANCE) {
+                maxBadge.classList.add('visible');
+            } else {
+                maxBadge.classList.remove('visible');
+            }
+            
+            currentChance = finalChance;
+            updateCircleVisual(currentChance);
+        } else {
+            currentChance = 0;
+            maxBadge.classList.remove('visible');
+            updateCircleVisual(0);
+        }
+    }
+
+    function updateCircleVisual(chance) {
+        const circumference = 220;
+        const offset = circumference - (chance / 100) * circumference;
+        progressCircle.style.strokeDashoffset = offset;
+        progressText.innerText = chance.toFixed(2) + '%';
+        
+        if (chance >= 60) {
+            progressCircle.style.stroke = '#4caf50';
+        } else if (chance >= 30) {
+            progressCircle.style.stroke = '#f0b90b';
+        } else {
+            progressCircle.style.stroke = '#f44336';
+        }
+    }
+
+    function spinWheelToResult(isWin, callback) {
+        arrowPointer.style.transition = 'none';
+        arrowPointer.style.transform = 'rotate(0deg)';
+        void arrowPointer.offsetWidth;
+
+        const minSpins = 5;
+        const maxSpins = 8;
+        const randomSpins = Math.floor(Math.random() * (maxSpins - minSpins + 1)) + minSpins;
+        
+        let finalAngle;
+        if (isWin) {
+            const winAngleMax = currentChance * 3.6;
+            finalAngle = Math.random() * winAngleMax;
+        } else {
+            const loseAngleMin = currentChance * 3.6;
+            finalAngle = loseAngleMin + Math.random() * (360 - loseAngleMin);
+        }
+        
+        const totalDegrees = (randomSpins * 360) + finalAngle;
+        const duration = 2500;
+
+        playSpinSound(duration, 30);
+
+        arrowPointer.style.transition = `transform ${duration}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
+        arrowPointer.style.transform = `rotate(${totalDegrees}deg)`;
+
+        setTimeout(() => {
+            callback();
+        }, duration);
+    }
+
+    upgradeBtn.addEventListener('click', () => {
+        if (!selectedLeftItem || !selectedRightItem) {
+            showToast('Выбери карту и цель!', 'lose');
+            playTick(300, 0.1);
+            return;
+        }
+        if (isUpgrading) return;
+
+        initAudio();
+        isUpgrading = true;
+        upgradeBtn.disabled = true;
+        upgradeBtn.innerText = 'Крутим...';
+
+        const roll = Math.random() * 100;
+        const isWin = roll <= currentChance;
+
+        spinWheelToResult(isWin, () => {
+            const leftId = selectedLeftItem.id;
+            const leftName = selectedLeftItem.name;
+            const rightTemplateId = selectedRightItem.templateId;
+
+            if (isWin) {
+                upgradeBtn.innerText = 'УСПЕХ!';
+                upgradeBtn.style.background = 'linear-gradient(90deg, #4caf50, #8bc34a)';
+                
+                document.getElementById('slot-right').style.boxShadow = '0 0 20px #4caf50';
+                document.getElementById('slot-right').style.borderColor = '#4caf50';
+                
+                inventoryItems = inventoryItems.filter(i => i.id !== leftId);
+                
+                const newCard = {
+                    id: nextId++,
+                    templateId: rightTemplateId,
+                    name: selectedRightItem.name,
+                    image: selectedRightItem.image,
+                    rarity: selectedRightItem.rarity,
+                    price: selectedRightItem.price
+                };
+                inventoryItems.push(newCard);
+                
+                playWinSound();
+                showToast(`🎉 Вы получили ${newCard.name}!`, 'win');
+                
+                selectedLeftItem = null;
+                selectedRightItem = null;
+                updateSlot('left', null);
+                updateSlot('right', null);
+                updateChance();
+                
+                setTimeout(() => {
+                    document.getElementById('slot-right').style.boxShadow = 'none';
+                    document.getElementById('slot-right').style.borderColor = '#2a3342';
+                    resetAfterUpgrade();
+                    renderGrid();
+                }, 1500);
+                
+            } else {
+                upgradeBtn.innerText = 'ПРОВАЛ';
+                upgradeBtn.style.background = 'linear-gradient(90deg, #f44336, #e91e63)';
+                
+                document.getElementById('slot-left').style.boxShadow = '0 0 20px #f44336';
+                document.getElementById('slot-left').style.borderColor = '#f44336';
+                
+                inventoryItems = inventoryItems.filter(i => i.id !== leftId);
+                
+                playLoseSound();
+                showToast(`💀 ${leftName} сгорела...`, 'lose');
+                
+                selectedLeftItem = null;
+                updateSlot('left', null);
+                updateChance();
+                
+                setTimeout(() => {
+                    document.getElementById('slot-left').style.boxShadow = 'none';
+                    document.getElementById('slot-left').style.borderColor = '#2a3342';
+                    resetAfterUpgrade();
+                    renderGrid();
+                }, 1500);
+            }
+        });
+    });
+
+    function resetAfterUpgrade() {
+        isUpgrading = false;
+        upgradeBtn.disabled = false;
+        upgradeBtn.innerText = 'Апгрейд';
+        upgradeBtn.style.background = 'linear-gradient(90deg, #f0b90b, #f8d33a)';
+        
+        arrowPointer.style.transition = 'none';
+        arrowPointer.style.transform = 'rotate(0deg)';
+    }
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (isUpgrading) return;
+            
+            initAudio();
+            playSelectSound();
+            
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            currentTab = btn.dataset.tab;
+            renderGrid();
+        });
+    });
+
+    // Инициализация
+    renderGrid();
+    updateSlot('left', null);
+    updateSlot('right', null);
+    updateCircleVisual(0);
+
+</script>
+</body>
+</html>
